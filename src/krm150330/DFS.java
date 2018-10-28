@@ -1,8 +1,8 @@
 /** Starter code for SP8
  *  @author
+ *  Ketki Mahajan (krm150330)
+ * Anirudh Erabelly
  */
-
-// change to your netid
 package krm150330;
 
 import rbk.Graph;
@@ -10,7 +10,6 @@ import rbk.Graph.Vertex;
 import rbk.Graph.Edge;
 import rbk.Graph.GraphAlgorithm;
 import rbk.Graph.Factory;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,14 +18,20 @@ import java.util.Scanner;
 public class DFS extends GraphAlgorithm<DFS.DFSVertex> {
 
     List<Vertex> topologicalList = new ArrayList<Vertex>();
+
+    enum Color {
+        Black, White, Gray;
+    }
+
+    static boolean notDAG;
     public static class DFSVertex implements Factory {
+
         int cno;
-        int topNum;
-        boolean seen;
-        Vertex parent;
+        Color col;
 
         public DFSVertex(Vertex u) {
-            seen = false;
+            cno = 0;
+            col = Color.White;
         }
         public DFSVertex make(Vertex u) {
             return new DFSVertex(u); }
@@ -48,14 +53,12 @@ public class DFS extends GraphAlgorithm<DFS.DFSVertex> {
     {
         for(Vertex v: g)
         {
-            get(v).seen = false;
-            get(v).topNum = 0;
-            get(v).parent = null;
+            get(v).col = Color.White;
         }
 
         for(Vertex u: g)
         {
-            if(!get(u).seen)
+            if (get(u).col == Color.White)
             {
                 DFS_Visit(u);
             }
@@ -64,15 +67,20 @@ public class DFS extends GraphAlgorithm<DFS.DFSVertex> {
     }
     private void DFS_Visit(Vertex u)
     {
-        get(u).seen = true;
+        get(u).col = Color.Gray;
         for(Edge e: g.incident(u))
         {
+
             Vertex v = e.otherEnd(u);
-            if(!get(v).seen)
+
+            if (get(v).col == Color.White)
             {
                 DFS_Visit(v);
+            } else if (get(v).col == Color.Gray) {
+                notDAG = true;
             }
         }
+        get(u).col = Color.Black;
         topologicalList.add(0, u);
     }
 
@@ -100,11 +108,14 @@ public class DFS extends GraphAlgorithm<DFS.DFSVertex> {
 
     // Find topological oder of a DAG using DFS. Returns null if g is not a DAG.
     public static List<Vertex> topologicalOrder1(Graph g) {
-        DFS d = new DFS(g);
-        return d.topologicalOrder1();
+        DFS dfsGraph = new DFS(g);
+        dfsGraph = dfsGraph.depthFirstSearch(g);
 
-
-
+        if (!g.isDirected() || notDAG) {
+            return null;
+        } else {
+            return dfsGraph.topologicalOrder1();
+        }
     }
 
     // Find topological oder of a DAG using the second algorithm. Returns null if g is not a DAG.
@@ -120,16 +131,11 @@ public class DFS extends GraphAlgorithm<DFS.DFSVertex> {
         in = args.length > 0 ? new Scanner(new File(args[0])) : new Scanner(string);
 
         // Read graph from input
-        Graph g = Graph.readGraph(in);
+        Graph g = Graph.readGraph(in, true);
         g.printGraph(false);
 
-        DFS d = new DFS(g);
-        d = d.depthFirstSearch(g);
-        System.out.println(d.topologicalOrder1());
-       /* int numcc = d.connectedComponents();
-        System.out.println("Number of components: " + numcc + "\nu\tcno");
-        for(Vertex u: g) {
-            System.out.println(u + "\t" + d.cno(u));
-        }*/
+        System.out.println("Topological Order: ");
+        System.out.println(topologicalOrder1(g));
+
     }
 }
